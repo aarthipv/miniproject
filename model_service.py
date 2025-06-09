@@ -1,6 +1,7 @@
 import os
 import logging
 import re
+from difflib import SequenceMatcher
 
 # NOTE: The following imports will be needed when you integrate your actual model
 # Uncomment these when you have the model files ready:
@@ -89,34 +90,25 @@ class TextReconstructionService:
                 raise RuntimeError("Model not loaded properly")
             
             # ============================================================================
-            # RECONSTRUCTION LOGIC: Replace this section with your model's inference code
+            # RECONSTRUCTION LOGIC: Your specific model inference code
             # ============================================================================
             # TODO: When you integrate your actual model, uncomment and modify this code:
             
-            # Tokenize the input
             # inputs = self.tokenizer(
-            #     damaged_text,
-            #     return_tensors="pt",
-            #     padding=True,
-            #     truncation=True,
-            #     max_length=512
-            # ).to(self.device)
+            #     damaged_text, 
+            #     return_tensors="pt", 
+            #     truncation=True, 
+            #     padding=True
+            # )
             
-            # Generate reconstruction
-            # with torch.no_grad():
-            #     outputs = self.model.generate(
-            #         **inputs,
-            #         max_length=512,
-            #         num_beams=4,
-            #         early_stopping=True,
-            #         no_repeat_ngram_size=2
-            #     )
+            # # Move inputs to the same device as model
+            # device = next(self.model.parameters()).device
+            # inputs = {key: val.to(device) for key, val in inputs.items()}
             
-            # Decode the output
-            # reconstructed = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            # output = self.model.generate(**inputs, max_new_tokens=50)
+            # reconstructed = self.tokenizer.decode(output[0], skip_special_tokens=True)
             
-            # If your model expects different input format or generates different output,
-            # modify the above code accordingly
+            # return reconstructed
             # ============================================================================
             
             # Placeholder return for when you integrate your model
@@ -131,11 +123,11 @@ class TextReconstructionService:
         Demo reconstruction for testing purposes.
         This will be replaced when you integrate your actual model.
         """
-        # Simple demo logic to show the UI works
+        # Demo reconstructions based on your example
         reconstructions = {
-            "Ѕъ nꙋ'lꙋ꙼ аltъ ԁаtъ": "Съ nulla alta data (With no high date)",
-            "In nꙄmine P꙲tris et F꙲lii": "In nomine Patris et Filii (In the name of the Father and Son)",
-            "Въ и͏̈мѧ ѻ҃ца и сн҃а": "Въ имя отца и сына (In the name of the Father and Son)"
+            "Ѕъ nꙋ'lꙋ꙼ аltъ ԁаtъ": "Съ nulla alta data",
+            "In nꙄmine P꙲tris et F꙲lii": "In nomine Patris et Filii",
+            "Въ и͏̈мѧ ѻ҃ца и сн҃а": "Въ имя отца и сына"
         }
         
         # Check for exact matches first
@@ -168,7 +160,7 @@ class TextReconstructionService:
     
     def highlight_insertions(self, original, reconstructed):
         """
-        Highlight the insertions/reconstructions in the text.
+        Highlight the insertions/reconstructions in the text using SequenceMatcher.
         
         Args:
             original (str): The original damaged text
@@ -179,28 +171,29 @@ class TextReconstructionService:
         """
         try:
             # ============================================================================
-            # HIGHLIGHTING LOGIC: Customize this section based on your needs
+            # HIGHLIGHTING LOGIC: Using your specific SequenceMatcher approach
             # ============================================================================
-            # This is a simple implementation - you may want to use more sophisticated
-            # text alignment algorithms for better highlighting
+            matcher = SequenceMatcher(None, original.split(), reconstructed.split())
+            highlighted = []
             
-            # Split texts into words for comparison
-            orig_words = original.split()
-            recon_words = reconstructed.split()
+            for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+                if tag == "equal":
+                    # Words that are the same in both texts
+                    highlighted.extend(reconstructed.split()[j1:j2])
+                elif tag == "insert":
+                    # Words that were inserted/reconstructed
+                    highlighted.extend([
+                        f'<mark class="reconstruction">{word}</mark>' 
+                        for word in reconstructed.split()[j1:j2]
+                    ])
+                elif tag == "replace":
+                    # Words that were replaced/reconstructed
+                    highlighted.extend([
+                        f'<mark class="reconstruction">{word}</mark>' 
+                        for word in reconstructed.split()[j1:j2]
+                    ])
             
-            highlighted_parts = []
-            orig_idx = 0
-            
-            for recon_word in recon_words:
-                if orig_idx < len(orig_words) and self._words_similar(orig_words[orig_idx], recon_word):
-                    # Word exists in original, keep as is
-                    highlighted_parts.append(recon_word)
-                    orig_idx += 1
-                else:
-                    # This is likely an insertion/reconstruction
-                    highlighted_parts.append(f'<mark class="reconstruction">{recon_word}</mark>')
-            
-            return ' '.join(highlighted_parts)
+            return ' '.join(highlighted)
             
         except Exception as e:
             logging.error(f"Error during text highlighting: {e}")

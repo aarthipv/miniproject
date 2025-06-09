@@ -56,30 +56,24 @@ self.model.to(self.device)
 self.model.eval()
 ```
 
-### 4. Model Inference (`model_service.py` - Lines 96-116)
-Uncomment and modify the inference code in the `reconstruct()` method:
+### 4. Model Inference (`model_service.py` - Lines 97-111)
+Uncomment and modify the inference code in the `reconstruct()` method using your specific approach:
 ```python
-# Tokenize the input
 inputs = self.tokenizer(
-    damaged_text,
-    return_tensors="pt",
-    padding=True,
-    truncation=True,
-    max_length=512
-).to(self.device)
+    damaged_text, 
+    return_tensors="pt", 
+    truncation=True, 
+    padding=True
+)
 
-# Generate reconstruction
-with torch.no_grad():
-    outputs = self.model.generate(
-        **inputs,
-        max_length=512,
-        num_beams=4,
-        early_stopping=True,
-        no_repeat_ngram_size=2
-    )
+# Move inputs to the same device as model
+device = next(self.model.parameters()).device
+inputs = {key: val.to(device) for key, val in inputs.items()}
 
-# Decode the output
-reconstructed = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+output = self.model.generate(**inputs, max_new_tokens=50)
+reconstructed = self.tokenizer.decode(output[0], skip_special_tokens=True)
+
+return reconstructed
 ```
 
 ## Step 4: Custom Model Integration
