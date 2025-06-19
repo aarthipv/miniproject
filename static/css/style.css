@@ -233,6 +233,12 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--text-primary);
 }
 
+.translation-text {
+    color: var(--accent-primary);
+    font-weight: 500;
+    font-style: italic;
+}
+
 /* Reconstruction highlighting */
 .reconstruction {
     background-color: var(--reconstruction-bg);

@@ -42,10 +42,14 @@ def reconstruct_text():
         reconstructed_text = reconstruction_service.reconstruct(damaged_text)
         highlighted_text = reconstruction_service.highlight_insertions(damaged_text, reconstructed_text)
         
+        # Perform translation if available
+        translation = reconstruction_service.translate_with_gemini(reconstructed_text)
+        
         return jsonify({
             'original': damaged_text,
             'reconstructed': reconstructed_text,
             'highlighted': highlighted_text,
+            'translation': translation,
             'success': True
         })
     
@@ -57,6 +61,11 @@ def reconstruct_text():
 def get_examples():
     """Get example texts for demonstration."""
     examples = [
+        {
+            'title': 'Your Example Text',
+            'damaged': 'Zаmfіrаkе. nꙋ\'lꙋ꙼ аltъ',
+            'description': 'Example from your notebook showing mixed Latin/Cyrillic'
+        },
         {
             'title': 'Latin Medieval Text',
             'damaged': 'In nꙄmine P꙲tris et F꙲lii et Sp꙲ritus S꙲ncti',

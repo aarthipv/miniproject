@@ -19,6 +19,7 @@ class TextReconstructionApp {
         this.originalText = document.getElementById('originalText');
         this.reconstructedText = document.getElementById('reconstructedText');
         this.highlightedText = document.getElementById('highlightedText');
+        this.translationText = document.getElementById('translationText');
         
         // UI elements
         this.loadingIndicator = document.getElementById('loadingIndicator');
@@ -148,6 +149,7 @@ class TextReconstructionApp {
         this.originalText.textContent = result.original;
         this.reconstructedText.textContent = result.reconstructed;
         this.highlightedText.innerHTML = result.highlighted;
+        this.translationText.textContent = result.translation || 'Translation not available';
 
         // Show results with animation
         this.resultsSection.style.display = 'block';

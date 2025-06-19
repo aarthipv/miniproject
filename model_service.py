@@ -8,6 +8,16 @@ from difflib import SequenceMatcher
 # import torch
 # from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
+# Translation service import - will be loaded conditionally
+GEMINI_AVAILABLE = False
+try:
+    import requests
+    REQUESTS_AVAILABLE = True
+    logging.info("Using HTTP requests for Gemini API")
+except ImportError:
+    REQUESTS_AVAILABLE = False
+    logging.warning("Requests library not available. Translation feature disabled.")
+
 class TextReconstructionService:
     """Service for handling text reconstruction using the trained model."""
     
@@ -19,8 +29,26 @@ class TextReconstructionService:
         # Uncomment when integrating your model:
         # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
+        # Initialize translation service
+        self._init_translation()
+        
         # Load the model and tokenizer
         self._load_model()
+    
+    def _init_translation(self):
+        """Initialize the Gemini translation service."""
+        self.translation_available = False
+        if REQUESTS_AVAILABLE:
+            try:
+                self.api_key = os.environ.get("GEMINI_API_KEY")
+                if self.api_key:
+                    self.translation_available = True
+                    logging.info("Gemini translation service initialized successfully")
+                else:
+                    logging.warning("GEMINI_API_KEY not found. Translation feature disabled.")
+            except Exception as e:
+                logging.error(f"Failed to initialize Gemini translation: {e}")
+                self.translation_available = False
     
     def _load_model(self):
         """Load the trained model and tokenizer from the model directory."""
@@ -126,6 +154,7 @@ class TextReconstructionService:
         # Demo reconstructions based on your example
         reconstructions = {
             "Ѕъ nꙋ'lꙋ꙼ аltъ ԁаtъ": "Съ nulla alta data",
+            "Zаmfіrаkе. nꙋ'lꙋ꙼ аltъ": "Zamfirake. nulla alta",
             "In nꙄmine P꙲tris et F꙲lii": "In nomine Patris et Filii",
             "Въ и͏̈мѧ ѻ҃ца и сн҃а": "Въ имя отца и сына"
         }
@@ -227,3 +256,57 @@ class TextReconstructionService:
             return len(max(clean_word1, clean_word2, key=len)) / len(min(clean_word1, clean_word2, key=len)) <= 2
         
         return False
+    
+    def translate_with_gemini(self, text):
+        """
+        Translate reconstructed Latin/Cyrillic text to English using Gemini API.
+        
+        Args:
+            text (str): The reconstructed text to translate
+            
+        Returns:
+            str: English translation or error message
+        """
+        if not self.translation_available:
+            return "Translation unavailable - Gemini API not configured"
+        
+        try:
+            import requests
+            import json
+            
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={self.api_key}"
+            
+            prompt = f"""You are a Latin language expert. Translate the following Latin with Cyrillic letters into English and just give the final translation not all of the breakdown process:
+
+Latin: {text}
+
+English:"""
+            
+            payload = {
+                "contents": [{
+                    "parts": [{
+                        "text": prompt
+                    }]
+                }]
+            }
+            
+            headers = {
+                "Content-Type": "application/json"
+            }
+            
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
+            
+            if response.status_code == 200:
+                result = response.json()
+                if 'candidates' in result and len(result['candidates']) > 0:
+                    translation = result['candidates'][0]['content']['parts'][0]['text'].strip()
+                    return translation
+                else:
+                    return "Translation failed: No response from Gemini"
+            else:
+                logging.error(f"Gemini API error: {response.status_code} - {response.text}")
+                return f"Translation failed: API error {response.status_code}"
+            
+        except Exception as e:
+            logging.error(f"Translation error: {e}")
+            return f"Translation failed: {str(e)}"

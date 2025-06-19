@@ -64,7 +64,12 @@
                                     id="inputText" 
                                     rows="4" 
                                     placeholder="Enter damaged Latin or Cyrillic text here..."
+                                    accept-charset="UTF-8"
+                                    style="font-family: 'Crimson Text', serif; unicode-bidi: bidi-override; direction: ltr;"
                                 ></textarea>
+                                <small class="form-text text-muted">
+                                    Supports Latin and Cyrillic characters: Ѕъ nꙋ'lꙋ꙼ аltъ ԁаtъ
+                                </small>
                             </div>
                             
                             <div class="d-flex gap-2 flex-wrap">
@@ -128,7 +133,7 @@
                         </div>
 
                         <!-- Highlighted Differences -->
-                        <div class="card manuscript-card">
+                        <div class="card manuscript-card mb-3">
                             <div class="card-header">
                                 <h4 class="mb-0">
                                     <i class="fas fa-highlighter me-2"></i>
@@ -139,6 +144,22 @@
                                 <div class="result-text highlighted-text" id="highlightedText"></div>
                                 <small class="text-muted mt-2 d-block">
                                     <mark class="reconstruction">Highlighted portions</mark> indicate reconstructed text
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- English Translation -->
+                        <div class="card manuscript-card">
+                            <div class="card-header">
+                                <h4 class="mb-0">
+                                    <i class="fas fa-language me-2"></i>
+                                    English Translation
+                                </h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="result-text translation-text" id="translationText"></div>
+                                <small class="text-muted mt-2 d-block">
+                                    Powered by Gemini AI
                                 </small>
                             </div>
                         </div>
