@@ -7,6 +7,8 @@ Run this after placing your model files in reconstruction_model/
 import os
 import sys
 import logging
+from dotenv import load_dotenv
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')

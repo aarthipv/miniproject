@@ -1,7 +1,10 @@
 import os
 import logging
 from flask import Flask, render_template, request, jsonify
-from model_service import TextReconstructionService
+from input_handler import InputHandler
+from reconstruction_engine import ReconstructionEngine
+from translation_handler import TranslationHandler
+from output_handler import OutputHandler
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -10,13 +13,11 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "historical-text-reconstruction-key")
 
-# Initialize the text reconstruction service
-try:
-    reconstruction_service = TextReconstructionService()
-    logging.info("Successfully initialized text reconstruction service")
-except Exception as e:
-    logging.error(f"Failed to initialize reconstruction service: {e}")
-    reconstruction_service = None
+# Initialize handlers/services
+input_handler = InputHandler()
+reconstruction_engine = ReconstructionEngine()
+translation_handler = TranslationHandler()
+output_handler = OutputHandler()
 
 @app.route('/')
 def index():
@@ -25,34 +26,27 @@ def index():
 
 @app.route('/reconstruct', methods=['POST'])
 def reconstruct_text():
-    """API endpoint for text reconstruction."""
+    """API endpoint for text reconstruction using modular handlers."""
     try:
         data = request.get_json()
         if not data or 'text' not in data:
             return jsonify({'error': 'No text provided'}), 400
-        
-        damaged_text = data['text'].strip()
-        if not damaged_text:
-            return jsonify({'error': 'Empty text provided'}), 400
-        
-        if reconstruction_service is None:
-            return jsonify({'error': 'Reconstruction model not available. Please check model files.'}), 500
-        
-        # Perform text reconstruction
-        reconstructed_text = reconstruction_service.reconstruct(damaged_text)
-        highlighted_text = reconstruction_service.highlight_insertions(damaged_text, reconstructed_text)
-        
-        # Perform translation if available
-        translation = reconstruction_service.translate_with_gemini(reconstructed_text)
-        
-        return jsonify({
-            'original': damaged_text,
-            'reconstructed': reconstructed_text,
-            'highlighted': highlighted_text,
-            'translation': translation,
-            'success': True
-        })
-    
+        # Input validation
+        valid, cleaned = input_handler.validate_text(data['text'])
+        if not valid:
+            return jsonify({'error': cleaned}), 400
+        # Preprocess input
+        preprocessed = input_handler.preprocess_input(cleaned)
+        # Generate reconstruction
+        reconstructed = reconstruction_engine.generate_reconstruction(preprocessed)
+        # Highlight insertions
+        highlighted = output_handler.highlight_insertions(preprocessed, reconstructed)
+        # Translate
+        translation = translation_handler.translate_to_english(reconstructed)
+        formatted_translation = translation_handler.format_translation(translation)
+        # Display results
+        result = output_handler.display_results(preprocessed, reconstructed, highlighted, formatted_translation)
+        return jsonify(result)
     except Exception as e:
         logging.error(f"Error during text reconstruction: {e}")
         return jsonify({'error': f'Reconstruction failed: {str(e)}'}), 500
@@ -94,4 +88,4 @@ def internal_error(error):
     return render_template('index.html'), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5002, debug=True)
