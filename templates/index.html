@@ -141,7 +141,7 @@
                         </div>
 
                         <!-- English Translation -->
-                        <div class="card manuscript-card">
+                        <div class="card manuscript-card mb-3">
                             <div class="card-header">
                                 <h4 class="mb-0">
                                     <i class="fas fa-language me-2"></i>
@@ -152,6 +152,31 @@
                                 <div class="result-text translation-text" id="translationText"></div>
                                 <small class="text-muted mt-2 d-block">
                                     Powered by Gemini AI
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Download Options -->
+                        <div class="card manuscript-card">
+                            <div class="card-header">
+                                <h4 class="mb-0">
+                                    <i class="fas fa-download me-2"></i>
+                                    Download Results
+                                </h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <button class="btn btn-success" id="downloadPdfBtn">
+                                        <i class="fas fa-file-pdf me-2"></i>
+                                        Download PDF Report
+                                    </button>
+                                    <button class="btn btn-outline-secondary" id="downloadTxt">
+                                        <i class="fas fa-file-text me-2"></i>
+                                        Download Text File
+                                    </button>
+                                </div>
+                                <small class="text-muted mt-2 d-block">
+                                    Generate professional PDF reports or download as plain text
                                 </small>
                             </div>
                         </div>

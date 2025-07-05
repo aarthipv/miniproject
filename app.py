@@ -1,10 +1,12 @@
 import os
 import logging
+from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_file
 from input_handler import InputHandler
 from reconstruction_engine import ReconstructionEngine
 from translation_handler import TranslationHandler
 from output_handler import OutputHandler
+from pdf_handler import PDFHandler
 from io import BytesIO
 
 # Configure logging
@@ -19,6 +21,7 @@ input_handler = InputHandler()
 reconstruction_engine = ReconstructionEngine()
 translation_handler = TranslationHandler()
 output_handler = OutputHandler()
+pdf_handler = PDFHandler()
 
 @app.route('/')
 def index():
@@ -78,6 +81,54 @@ def get_examples():
         }
     ]
     return jsonify(examples)
+
+@app.route('/download-pdf', methods=['POST'])
+def download_pdf():
+    """Generate and download PDF report of reconstruction results."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Extract data
+        original_text = data.get('original_text', '')
+        reconstructed_text = data.get('reconstructed_text', '')
+        highlighted_text = data.get('highlighted_text', '')
+        translation = data.get('translation', '')
+        
+        if not all([original_text, reconstructed_text, translation]):
+            return jsonify({'error': 'Missing required data for PDF generation'}), 400
+        
+        # Generate PDF
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"latin_reconstruction_{timestamp}.pdf"
+        
+        pdf_path = pdf_handler.generate_pdf(
+            original_text=original_text,
+            reconstructed_text=reconstructed_text,
+            highlighted_text=highlighted_text,
+            translation=translation,
+            filename=filename
+        )
+        
+        # Read the generated PDF
+        with open(pdf_path, 'rb') as pdf_file:
+            pdf_content = pdf_file.read()
+        
+        # Clean up the temporary file
+        os.remove(pdf_path)
+        
+        # Return PDF as response
+        return send_file(
+            BytesIO(pdf_content),
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        logging.error(f"Error generating PDF: {e}")
+        return jsonify({'error': f'PDF generation failed: {str(e)}'}), 500
 
 @app.route('/download', methods=['POST'])
 def download_file():

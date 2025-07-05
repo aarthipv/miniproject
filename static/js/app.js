@@ -31,7 +31,9 @@ class TextReconstructionApp {
         this.themeToggle = document.getElementById('themeToggle');
         this.themeIcon = document.getElementById('themeIcon');
 
+        // Download elements
         this.downloadTxt = document.getElementById('downloadTxt');
+        this.downloadPdfBtn = document.getElementById('downloadPdfBtn');
     }
 
     bindEvents() {
@@ -54,6 +56,14 @@ class TextReconstructionApp {
             this.downloadTxt.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.downloadResult('txt');
+            });
+        }
+
+        // PDF download button
+        if (this.downloadPdfBtn) {
+            this.downloadPdfBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.downloadPdf();
             });
         }
     }
@@ -278,6 +288,67 @@ class TextReconstructionApp {
             }, 100);
         } catch (error) {
             this.showError('Download failed. Please try again.');
+        }
+    }
+
+    async downloadPdf() {
+        // Check if we have results to download
+        if (!this.originalText.textContent || !this.reconstructedText.textContent) {
+            this.showError('No reconstruction results to download. Please reconstruct some text first.');
+            return;
+        }
+
+        // Gather current results
+        const original = this.originalText.textContent || '';
+        const reconstructed = this.reconstructedText.textContent || '';
+        const highlightedHtml = this.highlightedText.innerHTML || '';
+        const highlighted = highlightedHtml.replace(/<[^>]+>/g, '');
+        const translation = this.translationText.textContent || '';
+
+        const payload = {
+            original_text: original,
+            reconstructed_text: reconstructed,
+            highlighted_text: highlighted,
+            translation: translation
+        };
+
+        try {
+            // Show loading state
+            const originalText = this.downloadPdfBtn.innerHTML;
+            this.downloadPdfBtn.disabled = true;
+            this.downloadPdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating PDF...';
+
+            const response = await fetch('/download-pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'PDF generation failed');
+            }
+
+            // Download the PDF
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `latin_reconstruction_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            }, 100);
+
+        } catch (error) {
+            console.error('PDF download error:', error);
+            this.showError(`PDF download failed: ${error.message}`);
+        } finally {
+            // Restore button state
+            this.downloadPdfBtn.disabled = false;
+            this.downloadPdfBtn.innerHTML = '<i class="fas fa-file-pdf me-2"></i>Download PDF Report';
         }
     }
 }
