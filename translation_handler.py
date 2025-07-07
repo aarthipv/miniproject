@@ -14,7 +14,7 @@ class TranslationHandler:
         try:
             import requests
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={self.api_key}"
-            prompt = f"""You are a Latin language expert. Translate the following Latin with Cyrillic letters into English and just give the final translation not all of the breakdown process:\n\nLatin: {text}\n\nEnglish:"""
+            prompt = f"""You are a Latin language expert. Translate the following Latin with Cyrillic letters into English and just give the final English translation not all of the breakdown process: \n\nLatin: {text}\n\nEnglish:"""
             payload = {"contents": [{"parts": [{"text": prompt}]}]}
             headers = {"Content-Type": "application/json"}
             response = requests.post(url, json=payload, headers=headers, timeout=30)
